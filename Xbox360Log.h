@@ -27,7 +27,7 @@
 //
 // Logging configuration
 //
-#define XBOX360_LOG_ENABLED         1
+#define XBOX360_LOG_ENABLED         0
 #define XBOX360_LOG_MAX_SIZE        (1024 * 1024)  // 1 MB per log file
 #define XBOX360_LOG_MAX_FILES       5              // Keep only last 5 log files
 
