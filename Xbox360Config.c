@@ -975,7 +975,8 @@ TryWriteConfigToVolume (
 {
   EFI_STATUS         Status;
   EFI_FILE_PROTOCOL  *Root;
-  EFI_FILE_PROTOCOL  *Dir;
+  EFI_FILE_PROTOCOL  *EfiDir;
+  EFI_FILE_PROTOCOL  *XboxDir;
   EFI_FILE_PROTOCOL  *ConfigFile;
   CHAR8              *ConfigTemplate;
   UINTN              ConfigSize;
@@ -989,10 +990,10 @@ TryWriteConfigToVolume (
     return Status;
   }
 
-  // Try to open EFI directory (must exist for this to be valid ESP)
+  // Open the existing EFI directory.
   Status = Root->Open(
     Root,
-    &Dir,
+    &EfiDir,
     L"EFI",
     EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE,
     EFI_FILE_DIRECTORY
@@ -1002,43 +1003,47 @@ TryWriteConfigToVolume (
     Root->Close(Root);
     return Status;
   }
-  Dir->Close(Dir);
 
-  // Create Xbox360 directory
-  Status = Root->Open(
-    Root,
-    &Dir,
-    L"EFI\\Xbox360",
+  // Create/open Xbox360 as a child of the EFI directory.
+  Status = EfiDir->Open(
+    EfiDir,
+    &XboxDir,
+    L"Xbox360",
     EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
     EFI_FILE_DIRECTORY
   );
+
+  EfiDir->Close(EfiDir);
 
   if (EFI_ERROR(Status)) {
     Root->Close(Root);
     return Status;
   }
 
-  // Create config file
-  Status = Dir->Open(
-    Dir,
+  // Create/open config.ini inside EFI\Xbox360.
+  Status = XboxDir->Open(
+    XboxDir,
     &ConfigFile,
     L"config.ini",
     EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
     0
   );
 
-  Dir->Close(Dir);
+  XboxDir->Close(XboxDir);
 
   if (EFI_ERROR(Status)) {
     Root->Close(Root);
     return Status;
   }
 
-  // Write config template
+  // Write config template.
   ConfigTemplate = GenerateConfigTemplate();
   ConfigSize = AsciiStrLen(ConfigTemplate);
 
   Status = ConfigFile->Write(ConfigFile, &ConfigSize, ConfigTemplate);
+  if (!EFI_ERROR(Status)) {
+    Status = ConfigFile->Flush(ConfigFile);
+  }
 
   ConfigFile->Close(ConfigFile);
   Root->Close(Root);
@@ -1062,7 +1067,8 @@ TryWriteExampleToVolume (
 {
   EFI_STATUS         Status;
   EFI_FILE_PROTOCOL  *Root;
-  EFI_FILE_PROTOCOL  *Dir;
+  EFI_FILE_PROTOCOL  *EfiDir;
+  EFI_FILE_PROTOCOL  *XboxDir;
   EFI_FILE_PROTOCOL  *ExampleFile;
   CHAR8              *ConfigTemplate;
   UINTN              ConfigSize;
@@ -1076,11 +1082,11 @@ TryWriteExampleToVolume (
     return Status;
   }
 
-  // Try to open Xbox360 directory (assume it exists)
+  // Open the existing EFI directory.
   Status = Root->Open(
     Root,
-    &Dir,
-    L"EFI\\Xbox360",
+    &EfiDir,
+    L"EFI",
     EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE,
     EFI_FILE_DIRECTORY
   );
@@ -1090,27 +1096,46 @@ TryWriteExampleToVolume (
     return Status;
   }
 
-  // Create/overwrite example file
-  Status = Dir->Open(
-    Dir,
-    &ExampleFile,
-    L"config.ini.example",
+  // Create/open Xbox360 as a child of the EFI directory.
+  Status = EfiDir->Open(
+    EfiDir,
+    &XboxDir,
+    L"Xbox360",
     EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
-    0
+    EFI_FILE_DIRECTORY
   );
 
-  Dir->Close(Dir);
+  EfiDir->Close(EfiDir);
 
   if (EFI_ERROR(Status)) {
     Root->Close(Root);
     return Status;
   }
 
-  // Write config template
+  // Create/overwrite example file.
+  Status = XboxDir->Open(
+    XboxDir,
+    &ExampleFile,
+    L"config.ini.example",
+    EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
+    0
+  );
+
+  XboxDir->Close(XboxDir);
+
+  if (EFI_ERROR(Status)) {
+    Root->Close(Root);
+    return Status;
+  }
+
+  // Write config template.
   ConfigTemplate = GenerateConfigTemplate();
   ConfigSize = AsciiStrLen(ConfigTemplate);
 
   Status = ExampleFile->Write(ExampleFile, &ConfigSize, ConfigTemplate);
+  if (!EFI_ERROR(Status)) {
+    Status = ExampleFile->Flush(ExampleFile);
+  }
 
   ExampleFile->Close(ExampleFile);
   Root->Close(Root);
