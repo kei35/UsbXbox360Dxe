@@ -2,10 +2,10 @@ name: Build UEFI Driver
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ test ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ test ]
 
 jobs:
   build:
