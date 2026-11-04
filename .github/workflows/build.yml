@@ -1,11 +1,7 @@
 name: Build UEFI Driver
 
 on:
-  push:
-    branches: [ test ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ test ]
+  workflow_dispatch
 
 jobs:
   build:
