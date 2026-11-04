@@ -1,11 +1,14 @@
 name: Build UEFI Driver
 
 on:
-  push:
-    branches: [ master, dev ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ master, dev ]
+  workflow_dispatch:
+
+#on:
+#  push:
+#    branches: [ master, dev ]
+#    tags: [ 'v*' ]
+#  pull_request:
+#    branches: [ master, dev ]
 
 jobs:
   build:
